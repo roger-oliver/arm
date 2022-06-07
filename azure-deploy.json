@@ -27,7 +27,15 @@
         "kind": "StorageV2",
         "sku": {
             "name": "[parameters('storageAccountTypeName')]"
+        },
+        "properties": {
+            "supportsHttpsTrafficOnly": true
         }
     }],
-    "outputs": {}
+    "outputs": {
+        "storageEndpoint": {
+            "type": "object",
+            "value": "[reference('learnexercise1975').primaryEndpoints]"
+        }
+    }
 }

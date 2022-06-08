@@ -6,7 +6,10 @@
     "variables": {
         "storageAccountName": "[concat('storage', uniqueString(resourceGroup().id))]",
         "storageBlobContainerName": "config",
-        "userAssignedIdentityName": "configDeployer"
+        "userAssignedIdentityName": "configDeployer",
+        "roleAssigmentName": "[guid(concat(resourceGroup().id, 'contributor'))]",
+        "contributorRoleDinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "deploymentScriptName": "CopyConfigScript"
     },
     "resources": [
         {
@@ -56,7 +59,55 @@
             "apiVersion": "2018-11-30",
             "name": "[variables('userAssignedIdentityName')]",
             "location": "[resourceGroup().location]"
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2020-10-01-preview",
+            "name": "[variables('roleAssigmentName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[variables('contributorRoleDinitionId')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities',variables('userAssignedIdentityName')), '2015-08-31-preview').principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deploymentScripts",
+            "apiVersion": "2020-10-01",
+            "name": "[variables('deploymentScriptName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "AzurePowerShell",
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssigmentName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', variables('storageAccountName'), 'default', variables('storageBlobContainerName'))]"
+            ],
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]": {}
+                }
+            },
+                "properties": {
+                "azPowerShellVersion": "3.0",
+                "scriptContent": "
+                    Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/mslearn-arm-deploymentscripts-sample/appsettings.json' -OutFile 'appsettings.json'
+                    $storageAccount = Get-AzStorageAccount -ResourceGroupName 'learndeploymentscript_exercise_1' | Where-Object { $_.StorageAccountName -like 'storage*' }
+                    $blob = Set-AzStorageBlobContent -File 'appsettings.json' -Container 'config' -Blob 'appsettings.json' -Context $StorageAccount.Context
+                    $DeploymentScriptOutputs = @{}
+                    $DeploymentScriptOutputs['Uri'] = $blob.ICloudBlob.Uri
+                    $DeploymentScriptOutputs['StorageUri'] = $blob.ICloudBlob.StorageUri
+                ",
+                "retentionInterval": "P1D"
+            }
         }
     ],
-    "outputs": {}
+    "outputs": {
+        "fileUri": {
+            "type": "string",
+            "value": "[reference(variables('deploymentScriptName')).outputs.Uri]"
+        }
+    }
 }

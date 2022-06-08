@@ -23,9 +23,11 @@
         }
     },
     "functions": [],
-    "variables": {},
+    "variables": {
+        "storageName": "[toLower(concat(parameters('storageNamePrefix'),uniqueString(resourceGroup().id)))]"
+    },
     "resources": [{
-        "name": "[toLower(concat(parameters('storageNamePrefix'),uniqueString(resourceGroup().id)))]",
+        "name": "[variables('storageName')]",
         "type": "Microsoft.Storage/storageAccounts",
         "apiVersion": "2021-06-01",
         "tags": {

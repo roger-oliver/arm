@@ -5,7 +5,8 @@
     "functions": [],
     "variables": {
         "storageAccountName": "[concat('storage', uniqueString(resourceGroup().id))]",
-        "storageBlobContainerName": "config"
+        "storageBlobContainerName": "config",
+        "userAssignedIdentityName": "configDeployer"
     },
     "resources": [
         {
@@ -49,6 +50,12 @@
             "properties": {
                 "publicAccess": "Blob"
             }
+        },
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[variables('userAssignedIdentityName')]",
+            "location": "[resourceGroup().location]"
         }
     ],
     "outputs": {}

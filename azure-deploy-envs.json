@@ -20,6 +20,17 @@
                 "Standard_GZRS",
                 "Standard_RAGZRS"
             ]
+        },
+        "resourceTags": {
+            "type": "object",
+            "metadata": {
+                "description": "Parameter used to include tags to a resource"
+            },
+            "defaultValue": {
+                "Environment": "Dev",
+                "Project": "Leaning ARM templates"
+            }
+
         }
     },
     "functions": [],
@@ -30,9 +41,7 @@
         "name": "[variables('storageName')]",
         "type": "Microsoft.Storage/storageAccounts",
         "apiVersion": "2021-06-01",
-        "tags": {
-            "displayName": "[toLower(concat(parameters('storageNamePrefix'),uniqueString(resourceGroup().id)))]"
-        },
+        "tags": "[parameters('resourceTags')]",
         "location": "[resourceGroup().location]",
         "kind": "StorageV2",
         "sku": {
